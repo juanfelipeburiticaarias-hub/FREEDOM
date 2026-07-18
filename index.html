@@ -916,10 +916,47 @@ body.freedom-lock {
   }
 
   @media (max-width:640px){
-    .hero{padding:48px 18px 40px;}
-    .controls-inner{flex-direction:column; align-items:stretch;}
-    .search-wrap{max-width:none;}
-    .price-toggle{justify-content:space-between;}
+    .hero{padding:26px 16px 22px;}
+    .brand-logo{width:min(240px, 76%); margin-bottom:10px;}
+    .hero-season{font-size:19px; margin-bottom:10px;}
+    .hero-note{margin-top:10px; font-size:10px; padding:7px 10px;}
+    .controls{
+      position:static;
+      padding:12px 0 9px;
+      background:var(--paper);
+      backdrop-filter:none;
+    }
+    .controls-inner{display:block;}
+    .search-wrap{max-width:none; margin:0 14px 10px;}
+    .search-wrap input{min-height:44px; font-size:16px;}
+    .chips{
+      display:flex;
+      flex-wrap:nowrap;
+      gap:8px;
+      overflow-x:auto;
+      overscroll-behavior-x:contain;
+      -webkit-overflow-scrolling:touch;
+      scrollbar-width:none;
+      padding:0 14px 4px;
+      scroll-snap-type:x proximity;
+    }
+    .chips::-webkit-scrollbar{display:none;}
+    .chip{
+      flex:0 0 auto;
+      min-height:42px;
+      padding:10px 15px;
+      scroll-snap-align:start;
+    }
+    .grid-wrap{padding:24px 14px 100px; scroll-margin-top:12px;}
+    .count-line{margin-bottom:16px;}
+    .grid{grid-template-columns:minmax(0, 1fr); gap:22px;}
+    .tag:hover{transform:none;}
+    .wa-fab{
+      right:14px;
+      bottom:max(14px, env(safe-area-inset-bottom));
+      padding:12px 16px;
+      font-size:11px;
+    }
   }
   @media (prefers-reduced-motion: reduce){
     .tag, .switch .knob{transition:none;}
@@ -939,7 +976,7 @@ body.freedom-lock {
     <div class="search-wrap">
       <input type="text" id="searchInput" placeholder="Buscar por nombre o referencia…">
     </div>
-    <div class="chips" id="chipRow"></div>
+    <div class="chips" id="chipRow" aria-label="Filtrar por tipo de prenda"></div>
   </div>
 </div>
 
@@ -992,12 +1029,39 @@ function renderChips(){
   const row = document.getElementById("chipRow");
   row.innerHTML = "";
   categorias.forEach(cat=>{
-    const el = document.createElement("div");
+    const el = document.createElement("button");
+    el.type = "button";
     el.className = "chip" + (cat===activeCat ? " active" : "");
     el.textContent = cat;
-    el.onclick = () => { activeCat = cat; renderChips(); renderGrid(); };
+    el.setAttribute("aria-pressed", String(cat === activeCat));
+    el.onclick = () => {
+      activeCat = cat;
+      renderChips();
+      renderGrid();
+      if (window.matchMedia("(max-width: 640px)").matches) {
+        document.querySelector(".grid-wrap").scrollIntoView({
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+          block: "start"
+        });
+      }
+    };
     row.appendChild(el);
   });
+  if (window.matchMedia("(max-width: 640px)").matches) {
+    requestAnimationFrame(() => {
+      const selected = row.querySelector(".chip.active");
+      if (!selected) return;
+      const left = Math.max(0, selected.offsetLeft - (row.clientWidth - selected.offsetWidth) / 2);
+      if (typeof row.scrollTo === "function") {
+        row.scrollTo({
+          left,
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+        });
+      } else {
+        row.scrollLeft = left;
+      }
+    });
+  }
 }
 
 function renderGrid(){
